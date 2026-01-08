@@ -9,7 +9,7 @@ import java.util.concurrent.ScheduledThreadPoolExecutor;
 
 import jl95.lang.*;
 import jl95.lang.variadic.*;
-import jl95.util.VoidAwaitable;
+import jl95.util.UVoidFuture;
 
 import static jl95.lang.SuperPowers.*;
 
@@ -110,7 +110,7 @@ public class Server {
      * start listening for incoming connections
      * @return promise of server already started
      */
-    synchronized public final VoidAwaitable start    () {
+    synchronized public final UVoidFuture  start    () {
 
         if (isRunning()) throw new IllegalStateException();
         toStop      = false;
@@ -142,33 +142,33 @@ public class Server {
             isRunning = false;
         }).start();
         isRunning = true;
-        return VoidAwaitable.of(startFuture);
+        return UVoidFuture.of(startFuture);
     }
     /**
      * stop listening for incoming connections
      * @return promise of server already stopped
      */
-    synchronized public final VoidAwaitable   stop     () {
+    synchronized public final UVoidFuture  stop     () {
 
         if (!isRunning()) throw new IllegalStateException();
         if (stopFuture == null) throw new AssertionError();
         toStop = true;
-        return VoidAwaitable.of(stopFuture);
+        return UVoidFuture.of(stopFuture);
     }
     /**
      * @return whether server is running i.e. listening for connections
      */
-    synchronized public final Boolean         isRunning() { return isRunning; }
+    synchronized public final Boolean      isRunning() { return isRunning; }
     /**
      * @return internal server socket
      */
-    synchronized public final ServerSocket    getSocket() { return serverSocket; }
+    synchronized public final ServerSocket getSocket() { return serverSocket; }
     /**
      * stop the server (if not stopped already) and close the internal server socket
      */
     public void close() {
         if (isRunning()) {
-            stop().await();
+            stop().get();
         }
         uncheck(getSocket()::close);
     }

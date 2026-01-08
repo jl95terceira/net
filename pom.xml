@@ -6,7 +6,7 @@
 
     <groupId>jl95terceira</groupId>
     <artifactId>net</artifactId>
-    <version>1.1.0</version>
+    <version>1.2.0</version>
     <packaging>jar</packaging>
 
     <dependencies>
@@ -17,9 +17,9 @@
             <scope>test</scope>
         </dependency>
         <dependency>
-            <groupId>io.github.jl95terceira</groupId>
+            <groupId>jl95terceira</groupId>
             <artifactId>batteries</artifactId>
-            <version>0.19.0</version>
+            <version>0.22.0</version>
         </dependency>
     </dependencies>
 
