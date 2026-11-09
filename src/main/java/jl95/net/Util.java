@@ -1,8 +1,9 @@
 package jl95.net;
 
-import jl95.util.Awaitable;
+import jl95.lang.variadic.Method1;
 import jl95.util.UFuture;
 
+import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
@@ -12,8 +13,8 @@ import java.util.concurrent.CompletableFuture;
 import static jl95.lang.SuperPowers.*;
 
 public class Util {
-    public static ServerSocket getSimpleServerSocket       (InetSocketAddress addr,
-                                                            Integer           acceptTimeoutMs) {
+    public static ServerSocket    getSimpleServerSocket  (InetSocketAddress addr,
+                                                          Integer acceptTimeoutMs) {
         return uncheck(() -> {
             var socket = new ServerSocket();
             socket.bind(addr);
@@ -21,45 +22,49 @@ public class Util {
             return socket;
         });
     }
-    public static ServerSocket    getSimpleServerSocket       (InetSocketAddress addr) {
+    public static ServerSocket    getSimpleServerSocket   (InetSocketAddress addr) {
         return getSimpleServerSocket(addr, Server.Defaults.soTimeoutMs);
     }
-    public static UFuture<Socket> getSocketByAcceptFuture     (InetSocketAddress addr) {
+    public static UFuture<Socket> getSocketByAcceptFuture (InetSocketAddress addr) {
 
         return uncheck(() -> {
-            var serversock = new ServerSocket();
+            final var serversock = new ServerSocket();
             serversock.bind(addr);
-            CompletableFuture<Socket> socketFuture = new CompletableFuture<>();
+            final var socketFuture = new CompletableFuture<Socket>();
             new Thread(unchecked(() -> {
-                var sock = serversock.accept();
+                final Socket sock = serversock.accept();
                 serversock.close();
                 socketFuture.complete(sock);
             })::accept).start();
             return UFuture.of(socketFuture);
         });
     }
-    public static Socket          getSocketByAccept           (InetSocketAddress addr) {
+    public static Socket          getSocketByAccept       (InetSocketAddress addr) {
 
         return getSocketByAcceptFuture(addr).get();
     }
-    public static UFuture<Socket> getSocketByConnectFuture    (InetSocketAddress serverAddr) {
-        var socket = new Socket();
-        var future = new CompletableFuture<Socket>();
+    public static UFuture<Socket> getSocketByConnectFuture(InetSocketAddress serverAddr, Method1<Exception> connectExceptionHandler) {
+        final var future = new CompletableFuture<Socket>();
         new Thread(unchecked(() -> {
-            var success = false;
-            while (!success) {
-                try {
-                    socket.connect(serverAddr);
-                    success = true;
-                } catch (SocketException ex) {
-                    sleep(500);
-                }
-            }
-            future.complete(socket);
+            future.complete(getSocketByConnect(serverAddr, connectExceptionHandler));
         })::accept).start();
         return UFuture.of(future);
     }
-    public static Socket          getSocketByConnect          (InetSocketAddress serverAddr) {
-        return getSocketByConnectFuture(serverAddr).get();
+    public static UFuture<Socket> getSocketByConnectFuture(InetSocketAddress serverAddr) {
+        return getSocketByConnectFuture(serverAddr, ex -> sleep(500));
+    }
+    public static Socket          getSocketByConnect      (InetSocketAddress serverAddr, Method1<Exception> connectExceptionHandler) throws IOException {
+        while (true) {
+            final var socket = new Socket();
+            try {
+                socket.connect(serverAddr);
+                return socket;
+            } catch (SocketException ex) {
+                connectExceptionHandler.accept(ex);
+            }
+        }
+    }
+    public static Socket          getSocketByConnect      (InetSocketAddress serverAddr) throws IOException {
+        return getSocketByConnect(serverAddr, ex -> sleep(500));
     }
 }
